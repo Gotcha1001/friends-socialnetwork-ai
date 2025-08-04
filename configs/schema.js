@@ -1,40 +1,40 @@
-import {
+const {
   pgTable,
   serial,
   text,
   timestamp,
   jsonb,
-  varchar,
   boolean,
-} from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+} = require("drizzle-orm/pg-core");
+const { relations } = require("drizzle-orm");
 
 // Users table (linked to Clerk for authentication)
-export const users = pgTable("users", {
+const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  clerkId: text("clerk_id").notNull().unique(), // Clerk user ID
+  clerkId: text("clerk_id").notNull().unique(),
   email: text("email").notNull(),
   username: text("username").notNull().unique(),
-  name: text("name"), // Optional, as it's included in your insert
-  isAdmin: boolean("is_admin").default(false), // Add isAdmin to schema
+  name: text("name"),
+  isAdmin: boolean("is_admin").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(), // Add updatedAt
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Profiles table (user's personal information)
-export const profiles = pgTable("profiles", {
+const profiles = pgTable("profiles", {
   id: serial("id").primaryKey(),
   userId: serial("user_id")
     .references(() => users.id)
     .notNull(),
   bio: text("bio"),
-  interests: jsonb("interests").default([]), // Store interests as JSON array
+  interests: jsonb("interests").default([]),
   location: text("location"),
+  profileImage: text("profile_image"), // Added for Cloudinary URL
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Posts table (user-generated content)
-export const posts = pgTable("posts", {
+const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
   userId: serial("user_id")
     .references(() => users.id)
@@ -44,7 +44,7 @@ export const posts = pgTable("posts", {
 });
 
 // Friend requests table
-export const friendRequests = pgTable("friend_requests", {
+const friendRequests = pgTable("friend_requests", {
   id: serial("id").primaryKey(),
   senderId: serial("sender_id")
     .references(() => users.id)
@@ -52,12 +52,12 @@ export const friendRequests = pgTable("friend_requests", {
   receiverId: serial("receiver_id")
     .references(() => users.id)
     .notNull(),
-  status: text("status").notNull().default("pending"), // pending, accepted, rejected
+  status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Relations for easier querying
-export const usersRelations = relations(users, ({ one, many }) => ({
+const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(profiles, {
     fields: [users.id],
     references: [profiles.userId],
@@ -67,21 +67,21 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   receivedFriendRequests: many(friendRequests, { relationName: "receiver" }),
 }));
 
-export const profilesRelations = relations(profiles, ({ one }) => ({
+const profilesRelations = relations(profiles, ({ one }) => ({
   user: one(users, {
     fields: [profiles.userId],
     references: [users.id],
   }),
 }));
 
-export const postsRelations = relations(posts, ({ one }) => ({
+const postsRelations = relations(posts, ({ one }) => ({
   user: one(users, {
     fields: [posts.userId],
     references: [users.id],
   }),
 }));
 
-export const friendRequestsRelations = relations(friendRequests, ({ one }) => ({
+const friendRequestsRelations = relations(friendRequests, ({ one }) => ({
   sender: one(users, {
     fields: [friendRequests.senderId],
     references: [users.id],
@@ -93,3 +93,14 @@ export const friendRequestsRelations = relations(friendRequests, ({ one }) => ({
     relationName: "receiver",
   }),
 }));
+
+module.exports = {
+  users,
+  profiles,
+  posts,
+  friendRequests,
+  usersRelations,
+  profilesRelations,
+  postsRelations,
+  friendRequestsRelations,
+};
