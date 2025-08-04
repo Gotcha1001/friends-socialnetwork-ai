@@ -34,7 +34,7 @@ export default function Header() {
                         <div className="bg-gradient-to-r from-purple-500 to-cyan-500 rounded-xl p-2 group-hover:scale-110 transition-transform duration-300">
                             <Users className="w-6 h-6 text-white" />
                         </div>
-                        <Brain className="w-4 h-4 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
+                        <Brain className="w-4 h-4 text-yellow-400 absolute -top-1 -right-1 animate-spin" />
                     </div>
                     <span className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-200 via-cyan-200 to-pink-200 bg-clip-text text-transparent">
                         FriendAI
