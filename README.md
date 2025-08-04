@@ -1,3 +1,5 @@
-Hello Git
+HEYOO !!! Everyone, welcome to my GIT GUIDE.....
+
+-YO JOHN HERE....
 
 - I'm adding this from 'feature-branch' a second time
