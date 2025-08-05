@@ -1,24 +1,37 @@
-const { db } = require("@/configs/db");
-const { profiles, users } = require("@/configs/schema");
-const { eq } = require("drizzle-orm");
-const { NextResponse } = require("next/server");
-const { auth } = require("@clerk/nextjs/server");
-const { uploadImage } = require("@/lib/cloudinary");
+// app/api/profile/route.js
+import { db } from "@/configs/db";
+import { profiles, users } from "@/configs/schema";
+import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
+import { uploadImage } from "../../lib/cloudinary";
 
-async function POST(request) {
+export async function POST(request) {
   try {
-    const { userId } = auth();
+    // Get current user for authentication
+    const clerkUser = await currentUser();
+    console.log("API: /api/profile currentUser data", {
+      clerkUserId: clerkUser?.id,
+      clerkUsername: clerkUser?.username,
+      clerkEmail: clerkUser?.primaryEmailAddress?.emailAddress,
+    });
+
+    const userId = clerkUser?.id;
     if (!userId) {
+      console.log("API: No userId found, returning 401");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Query the database for the user
     const user = await db
-      .select({ id: users.id })
+      .select({ id: users.id, clerkId: users.clerkId })
       .from(users)
       .where(eq(users.clerkId, userId))
       .execute();
+    console.log("API: User query result", user);
 
     if (!user.length) {
+      console.log("API: User not found in database, returning 404");
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
@@ -29,9 +42,18 @@ async function POST(request) {
     const interests = JSON.parse(formData.get("interests") || "[]");
     const file = formData.get("profileImage");
 
+    console.log("API: Form data received", {
+      bio,
+      location,
+      interests,
+      hasFile: !!file,
+    });
+
     let profileImage = null;
     if (file) {
+      console.log("API: Uploading image to Cloudinary");
       profileImage = await uploadImage(file);
+      console.log("API: Image uploaded", profileImage);
     }
 
     const existingProfile = await db
@@ -39,6 +61,7 @@ async function POST(request) {
       .from(profiles)
       .where(eq(profiles.userId, userIdInDb))
       .execute();
+    console.log("API: Existing profile check", existingProfile);
 
     if (existingProfile.length > 0) {
       const updatedProfile = await db
@@ -52,6 +75,7 @@ async function POST(request) {
         })
         .where(eq(profiles.userId, userIdInDb))
         .returning();
+      console.log("API: Profile updated", updatedProfile[0]);
 
       return NextResponse.json({
         message: "Profile updated successfully",
@@ -70,6 +94,7 @@ async function POST(request) {
         updatedAt: new Date(),
       })
       .returning();
+    console.log("API: Profile created", newProfile[0]);
 
     return NextResponse.json({
       message: "Profile created successfully",
@@ -86,5 +111,3 @@ async function POST(request) {
     );
   }
 }
-
-module.exports = { POST };

@@ -1,10 +1,13 @@
-const { auth } = require('@clerk/nextjs/server');
-const { redirect } = require('next/navigation');
-const CreatePostClient = require('../components/CreatePostClient');
+// app/create-post/page.jsx
+import { currentUser } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
+import CreatePostClient from '../components/CreatePostClient';
 
+export default async function CreatePost() {
+    const clerkUser = await currentUser();
+    const userId = clerkUser?.id;
+    console.log('CreatePost: userId from currentUser()', userId);
 
-async function CreatePost() {
-    const { userId } = auth();
     if (!userId) {
         console.log('CreatePost: Redirecting to /sign-in due to missing userId');
         redirect('/sign-in');
@@ -12,5 +15,3 @@ async function CreatePost() {
 
     return <CreatePostClient />;
 }
-
-module.exports = CreatePost;
