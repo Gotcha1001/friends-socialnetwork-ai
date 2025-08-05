@@ -10,8 +10,6 @@ export default function Header() {
     const { user, isSignedIn, isLoaded } = useUser(); // Added isLoaded
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    console.log("USER:", user)
-
     useEffect(() => {
         if (isSignedIn && user) {
             user.reload().then(() => {
